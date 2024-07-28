@@ -190,6 +190,60 @@ return true;
 
 
 
+Tensor repeat(int repeatNum,{int axis=0}){
+
+  if(axis==0){
+    List<double> result=[];
+    if(axis==this.shape.length-1){
+      
+      for(int i=0;i<this.shape[this.shape.length-1];i++)
+      {
+        for(int j=0;j<repeatNum;j++)
+        {
+          result.add(this.data[i]);
+        }
+      }
+      return Tensor(result, [result.length]);
+    }
+    else{
+      for(int i=0;i<this.shape[0];i++){
+      for(int j=0;j<repeatNum;j++)
+        {
+          result.addAll(this[i].data);
+        }
+    }
+   
+    int shapeStartPos=1;
+    int shapeEndPos=this.shape.length;
+    List<int> outputShape=this.shape.sublist(shapeStartPos,shapeEndPos);
+    outputShape.insert(0,this.shape[0]*repeatNum);
+    return Tensor(result,outputShape);
+  
+ 
+    }
+  }
+  else{
+Tensor resultTensor=this[0].repeat(repeatNum,axis:axis-1);
+    for(int i=1;i<this.shape[0];i++){
+      Tensor other=this[i].repeat(repeatNum,axis:axis-1);
+      resultTensor=resultTensor.append(other);
+    }
+return resultTensor;
+  }
+}
+
+Tensor append(Tensor other)
+{
+List<double> result=this.data;
+result.addAll(other.data);
+List<int> outputShape=this.shape;
+outputShape[0]=outputShape[0]*2;
+return Tensor(result, outputShape);
+
+
+}
+
+
 @override
 String toString(){
 

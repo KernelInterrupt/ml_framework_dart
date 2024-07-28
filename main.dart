@@ -13,4 +13,5 @@ print(h);
 print(h.strides);
 print(f);
 print(h[1][0]);
+print(h.repeat(4,axis: 1));
 }
