@@ -6,7 +6,7 @@ late List<int> strides;
 
 Tensor(this.data,this.shape){
   int _shapeProduct =
-        shape!.fold(1, (previousValue, element) => previousValue * element);
+        shape.fold(1, (previousValue, element) => previousValue * element);
         if(_shapeProduct==data.length){
           strides=_computeStrides(shape);
         }
@@ -156,15 +156,18 @@ return Tensor(resultData,this.shape);
 }
 
 
-bool broadcastable(Tensor a,Tensor b){
-int minLength=a.shape.length<=b.shape.length?a.shape.length:b.shape.length;
+bool broadcastable(List<int> broadcastedShape){
+int minLength=this.shape.length<=broadcastedShape.length?this.shape.length:broadcastedShape.length;
 
 for(int i=minLength-1;i>=0;i--){
-  if(a.shape[i]==b.shape[i]||(a.shape[i]==1||b.shape[i]==1)){}
+  if(this.shape[i]==broadcastedShape[i]||(this.shape[i]==1||broadcastedShape[i]==1)){}
   else{return false;}
 
 }
 return true;
+
+
+
 
 }
 @override
