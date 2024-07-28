@@ -173,18 +173,15 @@ return Tensor(resultData,this.shape);
 }
 
 
-bool broadcastable(List<int> broadcastedShape){
-int minLength=this.shape.length<=broadcastedShape.length?this.shape.length:broadcastedShape.length;
+bool broadcastable(Tensor other){
+int minLength=this.shape.length<=other.shape.length?this.shape.length:other.shape.length;
 
 for(int i=minLength-1;i>=0;i--){
-  if(this.shape[i]==broadcastedShape[i]||(this.shape[i]==1||broadcastedShape[i]==1)){}
+  if(this.shape[i]==other.shape[i]||(this.shape[i]==1||other.shape[i]==1)){}
   else{return false;}
 
 }
 return true;
-
-
-
 
 }
 
@@ -223,9 +220,9 @@ Tensor repeat(int repeatNum,{int axis=0}){
     }
   }
   else{
-Tensor resultTensor=this[0].repeat(repeatNum,axis:axis-1);
+Tensor resultTensor=this[0].repeat(repeatNum,axis:axis-1).unsqueeze(0);
     for(int i=1;i<this.shape[0];i++){
-      Tensor other=this[i].repeat(repeatNum,axis:axis-1);
+      Tensor other=this[i].repeat(repeatNum,axis:axis-1).unsqueeze(0);
       resultTensor=resultTensor.append(other);
     }
 return resultTensor;
@@ -237,8 +234,10 @@ Tensor append(Tensor other)
 List<double> result=this.data;
 result.addAll(other.data);
 List<int> outputShape=this.shape;
-outputShape[0]=outputShape[0]*2;
-return Tensor(result, outputShape);
+if(this.shape.sublist(1,this.shape.length).equal(other.shape.sublist(1,this.shape.length))){
+outputShape[0]=outputShape[0]+other.shape[0];
+return Tensor(result, outputShape);}
+else{throw Exception("wrong shape");}
 
 
 }
@@ -249,6 +248,8 @@ Tensor unsqueeze(int axis){
   outputShape.insert(axis,1);
   return Tensor(this.data,outputShape);
 }
+
+
 
 
 @override
@@ -350,4 +351,36 @@ extension on List<int> {
     
    
   }
+}
+
+List<Tensor> broadcast(Tensor a,Tensor b){
+if(a.broadcastable(b)){
+if(a.shape.length<b.shape.length){return broadcast(b,a);}
+else{
+  
+  Tensor aTmp=a;
+  Tensor bTmp=b;
+//a.shape.length>=b.shape.length
+  for(int i=0;i<a.shape.length-b.shape.length;i++){
+    b=b.unsqueeze(0);
+  }
+  for(int i=a.shape.length-1;i>=0;i--){
+    if((a.shape[i]!=b.shape[i])&&(a.shape[i]!=1&&b.shape[i]!=1)){
+      throw Exception("can't broadcast to destined shape");
+    }
+    else if(a.shape[i]==b.shape[i]){}
+  else if(a.shape[i]==1){
+aTmp=a.repeat(b.shape[i],axis: i);
+  }
+  else if(b.shape[i]==1){
+bTmp=b.repeat(a.shape[i],axis: i);
+  }
+  else{throw Exception("Unknown error");}
+  }
+
+  return [aTmp,bTmp];
+}
+}
+else{throw Exception("can't broadcast to destined shape");}
+
 }

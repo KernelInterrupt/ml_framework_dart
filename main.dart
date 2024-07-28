@@ -7,11 +7,13 @@ Node func(Node x,Node y){
 }
 void main(){
 
-var f=[[1.0,2.0,3.0],[4.0,5.0,6.0]];
-var h=createTensor(f);
+var f=[1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,11.0,12.0];
+var h=Tensor(f, [2,3,2]);
+var x=[1.0,2.0,3.0,4.0];
+var g=Tensor(x, [2,1,2]);
+var list=broadcast(h, g);
 print(h);
-print(h.strides);
-print(f);
-print(h[1][0]);
-print(h.repeat(4,axis: 1));
+print(g);
+print(list[0]);
+print(list[1]);
 }
