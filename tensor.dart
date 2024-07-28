@@ -41,9 +41,26 @@ List<int> _computeStrides(List<int> shape) {
     Tensor operator /(Tensor other){
       return div(other);
     }
- 
+    Tensor operator [](int num){
+      return index(num);
+    }
 
-
+Tensor index(int num){
+  int startPos=num*strides[0];
+  int endPos=startPos+strides[0];
+  if(startPos>=endPos||startPos>=this.data.length||endPos>this.data.length)
+  {throw Exception("out of range.More detail:start position is:$startPos and end position is:$endPos");}
+  else{if(this.shape.length!=1){
+    int shapeStartPos=1;
+    int shapeEndPos=this.shape.length;
+    return Tensor(this.data.sublist(startPos,endPos),this.shape.sublist(shapeStartPos,shapeEndPos));
+  }
+  else{
+  
+  return Tensor(this.data.sublist(startPos,endPos),[1]);}
+  
+  }
+}
 
 Tensor add(dynamic other)
 {if(other is Tensor){
@@ -170,6 +187,9 @@ return true;
 
 
 }
+
+
+
 @override
 String toString(){
 
@@ -196,11 +216,9 @@ String toString(){
         for (int i = 0; i < tensorShape[dimension]; i++) {
           var sublist =
               buildList(dimension + 1, offset + i * strides[dimension]);
-          if (dimension == 0) {
-            result.addAll(sublist);
-          } else {
+          
             result.add(sublist);
-          }
+          
         }
         return result;
       }

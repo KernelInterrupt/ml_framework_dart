@@ -7,10 +7,10 @@ Node func(Node x,Node y){
 }
 void main(){
 
-Node a=Node(createTensor([2.0,2.0]));
-Node b=Node(createTensor([2.0,2.0]));
-Node z=func(a,b);
-z.backward(createTensor([1.0,1.0]));
-var h=Tensor([1.0,2.0,3.0,4.0,5.0,6.0], [2,3]);
+var f=[[1.0,2.0,3.0],[4.0,5.0,6.0]];
+var h=createTensor(f);
+print(h);
 print(h.strides);
+print(f);
+print(h[1][0]);
 }
