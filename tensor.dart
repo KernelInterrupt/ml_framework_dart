@@ -243,6 +243,13 @@ return Tensor(result, outputShape);
 
 }
 
+Tensor unsqueeze(int axis){
+
+  List<int> outputShape=this.shape;
+  outputShape.insert(axis,1);
+  return Tensor(this.data,outputShape);
+}
+
 
 @override
 String toString(){
