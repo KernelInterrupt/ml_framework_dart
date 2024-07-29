@@ -27,18 +27,49 @@ Node(this.tensor,{this.op,this.parents});
 
 
 Node add(Node other){
-
+if(this.tensor.shape==other.tensor.shape){
   return Node(this.tensor+other.tensor,op: 'add',parents: [this,other]);
 }
+else{
+  List<int> targetShape=calculateBroadcastedShape(this.tensor, other.tensor);
+  Node broadcastedThis=this.broadcast_to(targetShape);
+  Node broadcastedOther=other.broadcast_to(targetShape);
+  return Node(broadcastedThis.tensor+broadcastedOther.tensor,op: 'add',parents: [broadcastedThis,broadcastedOther]);
+}
+}
 Node sub(Node other){
-return Node(this.tensor-other.tensor,op: 'sub',parents: [this,other]);
+if(this.tensor.shape==other.tensor.shape){
+  return Node(this.tensor-other.tensor,op: 'sub',parents: [this,other]);
+}
+else{
+  List<int> targetShape=calculateBroadcastedShape(this.tensor, other.tensor);
+  Node broadcastedThis=this.broadcast_to(targetShape);
+  Node broadcastedOther=other.broadcast_to(targetShape);
+  return Node(broadcastedThis.tensor-broadcastedOther.tensor,op: 'sub',parents: [broadcastedThis,broadcastedOther]);
+}
 
 }
 Node mul(Node other){
-   return Node(this.tensor*other.tensor,op: 'mul',parents: [this,other]);
+   if(this.tensor.shape==other.tensor.shape){
+  return Node(this.tensor*other.tensor,op: 'mul',parents: [this,other]);
+}
+else{
+  List<int> targetShape=calculateBroadcastedShape(this.tensor, other.tensor);
+  Node broadcastedThis=this.broadcast_to(targetShape);
+  Node broadcastedOther=other.broadcast_to(targetShape);
+  return Node(broadcastedThis.tensor*broadcastedOther.tensor,op: 'mul',parents: [broadcastedThis,broadcastedOther]);
+}
 }
 Node div(Node other){
+  if(this.tensor.shape==other.tensor.shape){
   return Node(this.tensor/other.tensor,op: 'div',parents: [this,other]);
+}
+else{
+  List<int> targetShape=calculateBroadcastedShape(this.tensor, other.tensor);
+  Node broadcastedThis=this.broadcast_to(targetShape);
+  Node broadcastedOther=other.broadcast_to(targetShape);
+  return Node(broadcastedThis.tensor/broadcastedOther.tensor,op: 'div',parents: [broadcastedThis,broadcastedOther]);
+}
 }
 
 Node sin()
@@ -74,6 +105,10 @@ Node log()
 }
 Node pow(Node other){
    return Node(this.tensor.pow(other.tensor),op: 'pow',parents: [this,other]);
+}
+Node broadcast_to(List<int> broadcastedShape){
+return Node(this.tensor.broadcastTo(broadcastedShape),op:'broadcast',parents: [this]);
+
 }
 //Node sqrt(){
   //return Node(this.tensor.sqrt(),op:'sqrt',parents:[this]);
@@ -130,6 +165,9 @@ else if(op=='log'){
 else if(op=='exp'){
 parents![0].backward(gradient*this.tensor);//this.value==math.exp(parents![0].value)
 
+}
+else if(op=='broadcast'){
+  
 }
 }
 

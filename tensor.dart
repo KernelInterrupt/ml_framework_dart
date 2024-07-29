@@ -3,7 +3,7 @@ class Tensor{
 List<double> data;
 List<int> shape;
 late List<int> strides;
-
+List<int>? broadcastedAxes;
 Tensor(this.data,this.shape){
   int _shapeProduct =
         shape.fold(1, (previousValue, element) => previousValue * element);
@@ -173,11 +173,11 @@ return Tensor(resultData,this.shape);
 }
 
 
-bool broadcastable(Tensor other){
-int minLength=this.shape.length<=other.shape.length?this.shape.length:other.shape.length;
+bool broadcastable(List<int> broadcastedShape){
+int minLength=this.shape.length<=broadcastedShape.length?this.shape.length:broadcastedShape.length;
 
 for(int i=minLength-1;i>=0;i--){
-  if(this.shape[i]==other.shape[i]||(this.shape[i]==1||other.shape[i]==1)){}
+  if(this.shape[i]==broadcastedShape[i]||(this.shape[i]==1||broadcastedShape[i]==1)){}
   else{return false;}
 
 }
@@ -249,6 +249,35 @@ Tensor unsqueeze(int axis){
   return Tensor(this.data,outputShape);
 }
 
+
+Tensor broadcastTo(List<int> broadcastedShape){
+if(this.broadcastable(broadcastedShape)){
+if(this.shape.length<broadcastedShape.length){throw Exception("can't broadcast to destined shape");}
+else{
+  
+  Tensor thisTmp=this;
+  List<int> bcAxes=[];
+//this.shape.length>=broadcastedShape.length
+ 
+  for(int i=this.shape.length-1;i>=0;i--){
+    if((this.shape[i]!=broadcastedShape[i])&&(this.shape[i]!=1&&broadcastedShape[i]!=1)){
+      throw Exception("can't broadcast to destined shape");
+    }
+    else if(this.shape[i]==broadcastedShape[i]){}
+  else if(this.shape[i]==1){
+thisTmp=this.repeat(broadcastedShape[i],axis: i);
+bcAxes.add(i);
+  }
+  
+  else{throw Exception("Unknown error");}
+  }
+thisTmp.broadcastedAxes=bcAxes;
+  return thisTmp;
+}
+}
+else{throw Exception("can't broadcast to destined shape");}
+
+}
 
 
 
@@ -354,7 +383,7 @@ extension on List<int> {
 }
 
 List<Tensor> broadcast(Tensor a,Tensor b){
-if(a.broadcastable(b)){
+if(a.broadcastable(b.shape)){
 if(a.shape.length<b.shape.length){return broadcast(b,a);}
 else{
   
@@ -362,7 +391,7 @@ else{
   Tensor bTmp=b;
 //a.shape.length>=b.shape.length
   for(int i=0;i<a.shape.length-b.shape.length;i++){
-    b=b.unsqueeze(0);
+    bTmp=bTmp.unsqueeze(0);
   }
   for(int i=a.shape.length-1;i>=0;i--){
     if((a.shape[i]!=b.shape[i])&&(a.shape[i]!=1&&b.shape[i]!=1)){
@@ -370,15 +399,44 @@ else{
     }
     else if(a.shape[i]==b.shape[i]){}
   else if(a.shape[i]==1){
-aTmp=a.repeat(b.shape[i],axis: i);
+aTmp=aTmp.repeat(b.shape[i],axis: i);
   }
   else if(b.shape[i]==1){
-bTmp=b.repeat(a.shape[i],axis: i);
+bTmp=bTmp.repeat(a.shape[i],axis: i);
   }
   else{throw Exception("Unknown error");}
   }
 
   return [aTmp,bTmp];
+}
+}
+else{throw Exception("can't broadcast to destined shape");}
+
+}
+
+List<int> calculateBroadcastedShape(Tensor a,Tensor b){
+if(a.broadcastable(b.shape)){
+if(a.shape.length<b.shape.length){return calculateBroadcastedShape(b,a);}
+else{
+  
+  List<int> broadcastedShape=a.shape;
+//a.shape.length>=b.shape.length
+  
+  for(int i=a.shape.length-1;i>=0;i--){
+    if((a.shape[i]!=b.shape[i])&&(a.shape[i]!=1&&b.shape[i]!=1)){
+      throw Exception("can't broadcast to destined shape");
+    }
+    else if(a.shape[i]==b.shape[i]){}
+  else if(a.shape[i]==1){
+broadcastedShape[i]=b.shape[i];
+  }
+  else if(b.shape[i]==1){
+broadcastedShape[i]=a.shape[i];
+  }
+  else{throw Exception("Unknown error");}
+  }
+
+  return broadcastedShape;
 }
 }
 else{throw Exception("can't broadcast to destined shape");}
