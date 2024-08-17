@@ -12,8 +12,8 @@ var h=Tensor(f, [2,3,2]);
 var x=[1.0,2.0,3.0,4.0];
 var g=Tensor(x, [2,1,2]);
 var list=broadcast(h, g);
-print(h);
-print(g);
-print(list[0]);
-print(list[1]);
+var z=Node(h);
+var a=Node(g);
+print((z+a).tensor);
+print(z.tensor.sum([0,1,2]));
 }
