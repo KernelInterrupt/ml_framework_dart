@@ -3,17 +3,14 @@ import 'autograd.dart';
 import 'tensor.dart';
 Node func(Node x,Node y){
 
-  return x.pow(Node(createTensor([2.0,2.0])))+y.pow(Node(createTensor([2.0,2.0])));
+  return x-y;
 }
 void main(){
-
-var f=[1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,11.0,12.0];
-var h=Tensor(f, [2,3,2]);
-var x=[1.0,2.0,3.0,4.0];
-var g=Tensor(x, [2,1,2]);
-var list=broadcast(h, g);
-var z=Node(h);
-var a=Node(g);
-print((z+a).tensor);
-print(z.tensor.sum([0,1,2]));
+var x=Node(Tensor([2.0],[1]));
+var y=Node(Tensor([1.0,2.0,3.0],[3]));
+var z=func(x, y);
+z.backward();
+print(x.grad);
+print(y.grad);
+print(z.grad);
 }
