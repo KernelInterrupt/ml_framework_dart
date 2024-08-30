@@ -183,6 +183,66 @@ class Tensor {
     return Tensor(resultData, this.shape);
   }
 
+  Tensor basic_matmul(Tensor other){
+if(this.shape.length==2&&other.shape.length==2)
+{
+  if(this.shape[1]==other.shape[0]){
+     List<double> resultData = List.filled(this.shape[0]*other.shape[1], 0);
+     for(int i=0;i<this.shape[0];i++){
+      for(int j=0;j<other.shape[1];j++){
+        
+        for(int k=0;i<this.shape[1];i++){
+    
+      
+      resultData[i*other.shape[1]+j]+=this.data[i*this.shape[1]+k]*other.data[j+k*other.shape[1]];
+      }
+      
+
+
+      }
+     }
+     return Tensor(resultData, [this.shape[0],other.shape[1]]);
+  }
+  else{throw Exception("wrong shape");}
+}
+else if(this.shape.length==1&&other.shape.length==1)
+{
+  if(this.shape[0]==other.shape[0]){
+    double resultData=0;
+    for(int i=0;i<this.shape[0];i++){
+      resultData+=this.data[i]*other.data[i];
+
+    }
+    return Tensor([resultData], []);
+
+  }
+  else{throw Exception("wrong shape");}
+}
+else if(this.shape.length==1&&other.shape.length==2)
+{
+if(this.shape[0]==other.shape[0]){
+List<double> resultData = List.filled(other.shape[1], 0);
+for(int i=0;i<other.shape[1];i++){
+
+for(int j=0;j<other.shape[0];j++)
+{
+  
+  resultData[i]+=this.data[j]*other.data[j*other.shape[1]+i];
+}
+
+
+}
+return Tensor(resultData, [other.shape[1]]);
+}
+else{throw Exception("wrong shape");}
+
+}
+else{throw Exception("wrong shape");}
+
+  }
+
+
+
   bool broadcastable(List<int> broadcastedShape) {
     int minLength = this.shape.length <= broadcastedShape.length
         ? this.shape.length
@@ -197,6 +257,55 @@ class Tensor {
     }
     return true;
   }
+
+bool matmul_broadcastable(List<int> broadcastedShape) {
+if(this.shape.length==0&&broadcastedShape.length==0){
+  return false;
+}
+else if(this.shape.length==1&&broadcastedShape.length==1){
+  if(this.shape[0]==broadcastedShape[0]){
+    return true;
+  }
+  else{return false;}
+}
+else if(this.shape.length>=2&&broadcastedShape.length>=2){
+if(this.shape[this.shape.length-1]!=broadcastedShape[broadcastedShape.length-2]){
+  return false;
+}
+    int minLength = this.shape.length <= broadcastedShape.length
+        ? this.shape.length
+        : broadcastedShape.length;
+
+    for (int i = minLength - 1-2; i >= 0; i--) {
+      if (this.shape[i] == broadcastedShape[i] ||
+          (this.shape[i] == 1 || broadcastedShape[i] == 1)) {
+      } else {
+        return false;
+      }
+    }
+    return true;
+  }
+  else if(this.shape.length==1){
+
+    if(this.shape[0]!=broadcastedShape[broadcastedShape.length-2])
+    {
+      return false;
+    }
+    else{
+    return true;
+    }
+  }
+  else{
+    if(this.shape[this.shape.length-1]!=broadcastedShape[0]){
+      return false;
+    }
+    else{
+    return true;
+    }
+  }
+  
+  }
+
 
   Tensor repeat(int repeatNum, {int axis = 0}) {
     if (axis == 0) {
