@@ -59,7 +59,7 @@ class Tensor {
         return Tensor(this.data.sublist(startPos, endPos),
             this.shape.sublist(shapeStartPos, shapeEndPos));
       } else {
-        return Tensor([this.data[startPos]],[]);
+        return Tensor([this.data[startPos]], []);
       }
     }
   }
@@ -183,65 +183,67 @@ class Tensor {
     return Tensor(resultData, this.shape);
   }
 
-  Tensor basic_matmul(Tensor other){
-if(this.shape.length==2&&other.shape.length==2)
-{
-  if(this.shape[1]==other.shape[0]){
-     List<double> resultData = List.filled(this.shape[0]*other.shape[1], 0);
-     for(int i=0;i<this.shape[0];i++){
-      for(int j=0;j<other.shape[1];j++){
-        
-        for(int k=0;i<this.shape[1];i++){
-    
-      
-      resultData[i*other.shape[1]+j]+=this.data[i*this.shape[1]+k]*other.data[j+k*other.shape[1]];
-      }
-      
-
-
-      }
-     }
-     return Tensor(resultData, [this.shape[0],other.shape[1]]);
-  }
-  else{throw Exception("wrong shape");}
+  Tensor matmul(Tensor other) {
+    if(this.shape.length>2&&other.shape.length>2)//大于2维，默认已经经历过广播操作
+    {
+if(this.shape!=other.shape){
+  throw Exception("wrong shape");
 }
-else if(this.shape.length==1&&other.shape.length==1)
+else{
+  Tensor aTmp=this.clone();
+  Tensor bTmp=other.clone();
+  Tensor result=(aTmp[0].matmul(bTmp[0])).unsqueeze(0);
+for(int i=1;i<aTmp.shape[0];i++)
 {
-  if(this.shape[0]==other.shape[0]){
-    double resultData=0;
-    for(int i=0;i<this.shape[0];i++){
-      resultData+=this.data[i]*other.data[i];
+result=result.append(aTmp[i].matmul(bTmp[i].unsqueeze(0)));
+}
+return result;
+}
 
     }
-    return Tensor([resultData], []);
-
+    if (this.shape.length == 2 && other.shape.length == 2) {
+      if (this.shape[1] == other.shape[0]) {
+        List<double> resultData =
+            List.filled(this.shape[0] * other.shape[1], 0);
+        for (int i = 0; i < this.shape[0]; i++) {
+          for (int j = 0; j < other.shape[1]; j++) {
+            for (int k = 0; i < this.shape[1]; i++) {
+              resultData[i * other.shape[1] + j] +=
+                  this.data[i * this.shape[1] + k] *
+                      other.data[j + k * other.shape[1]];
+            }
+          }
+        }
+        return Tensor(resultData, [this.shape[0], other.shape[1]]);
+      } else {
+        throw Exception("wrong shape");
+      }
+    } else if (this.shape.length == 1 && other.shape.length == 1) {
+      if (this.shape[0] == other.shape[0]) {
+        double resultData = 0;
+        for (int i = 0; i < this.shape[0]; i++) {
+          resultData += this.data[i] * other.data[i];
+        }
+        return Tensor([resultData], []);
+      } else {
+        throw Exception("wrong shape");
+      }
+    } else if (this.shape.length == 1 && other.shape.length == 2) {
+      if (this.shape[0] == other.shape[0]) {
+        List<double> resultData = List.filled(other.shape[1], 0);
+        for (int i = 0; i < other.shape[1]; i++) {
+          for (int j = 0; j < other.shape[0]; j++) {
+            resultData[i] += this.data[j] * other.data[j * other.shape[1] + i];
+          }
+        }
+        return Tensor(resultData, [other.shape[1]]);
+      } else {
+        throw Exception("wrong shape");
+      }
+    } else {
+      throw Exception("wrong shape");
+    }
   }
-  else{throw Exception("wrong shape");}
-}
-else if(this.shape.length==1&&other.shape.length==2)
-{
-if(this.shape[0]==other.shape[0]){
-List<double> resultData = List.filled(other.shape[1], 0);
-for(int i=0;i<other.shape[1];i++){
-
-for(int j=0;j<other.shape[0];j++)
-{
-  
-  resultData[i]+=this.data[j]*other.data[j*other.shape[1]+i];
-}
-
-
-}
-return Tensor(resultData, [other.shape[1]]);
-}
-else{throw Exception("wrong shape");}
-
-}
-else{throw Exception("wrong shape");}
-
-  }
-
-
 
   bool broadcastable(List<int> broadcastedShape) {
     int minLength = this.shape.length <= broadcastedShape.length
@@ -258,54 +260,46 @@ else{throw Exception("wrong shape");}
     return true;
   }
 
-bool matmul_broadcastable(List<int> broadcastedShape) {
-if(this.shape.length==0&&broadcastedShape.length==0){
-  return false;
-}
-else if(this.shape.length==1&&broadcastedShape.length==1){
-  if(this.shape[0]==broadcastedShape[0]){
-    return true;
-  }
-  else{return false;}
-}
-else if(this.shape.length>=2&&broadcastedShape.length>=2){
-if(this.shape[this.shape.length-1]!=broadcastedShape[broadcastedShape.length-2]){
-  return false;
-}
-    int minLength = this.shape.length <= broadcastedShape.length
-        ? this.shape.length
-        : broadcastedShape.length;
-
-    for (int i = minLength - 1-2; i >= 0; i--) {
-      if (this.shape[i] == broadcastedShape[i] ||
-          (this.shape[i] == 1 || broadcastedShape[i] == 1)) {
+  bool matmul_broadcastable(List<int> broadcastedShape) {
+    if (this.shape.length == 0 && broadcastedShape.length == 0) {
+      return false;
+    } else if (this.shape.length == 1 && broadcastedShape.length == 1) {
+      if (this.shape[0] == broadcastedShape[0]) {
+        return true;
       } else {
         return false;
       }
-    }
-    return true;
-  }
-  else if(this.shape.length==1){
+    } else if (this.shape.length >= 2 && broadcastedShape.length >= 2) {
+      if (this.shape[this.shape.length - 1] !=
+          broadcastedShape[broadcastedShape.length - 2]) {
+        return false;
+      }
+      int minLength = this.shape.length <= broadcastedShape.length
+          ? this.shape.length
+          : broadcastedShape.length;
 
-    if(this.shape[0]!=broadcastedShape[broadcastedShape.length-2])
-    {
-      return false;
-    }
-    else{
-    return true;
+      for (int i = minLength - 1 - 2; i >= 0; i--) {
+        if (this.shape[i] == broadcastedShape[i] ||
+            (this.shape[i] == 1 || broadcastedShape[i] == 1)) {
+        } else {
+          return false;
+        }
+      }
+      return true;
+    } else if (this.shape.length == 1) {
+      if (this.shape[0] != broadcastedShape[broadcastedShape.length - 2]) {
+        return false;
+      } else {
+        return true;
+      }
+    } else {
+      if (this.shape[this.shape.length - 1] != broadcastedShape[0]) {
+        return false;
+      } else {
+        return true;
+      }
     }
   }
-  else{
-    if(this.shape[this.shape.length-1]!=broadcastedShape[0]){
-      return false;
-    }
-    else{
-    return true;
-    }
-  }
-  
-  }
-
 
   Tensor repeat(int repeatNum, {int axis = 0}) {
     if (axis == 0) {
@@ -345,23 +339,21 @@ if(this.shape[this.shape.length-1]!=broadcastedShape[broadcastedShape.length-2])
     List<double> result = List.from(this.data);
     result.addAll(other.data);
     List<int> outputShape = List.from(this.shape);
-   if(this.shape.length>=1){
-    if (this
-        .shape
-        .sublist(1, this.shape.length)
-        .equal(other.shape.sublist(1, this.shape.length))) {
-      outputShape[0] = outputShape[0] + other.shape[0];
-      return Tensor(result, outputShape);
+    if (this.shape.length >= 1) {
+      if (this
+          .shape
+          .sublist(1, this.shape.length)
+          .equal(other.shape.sublist(1, this.shape.length))) {
+        outputShape[0] = outputShape[0] + other.shape[0];
+        return Tensor(result, outputShape);
+      } else {
+        throw Exception("wrong shape");
+      }
+    } else if (this.shape.length == 0) {
+      return Tensor(result, [2]);
     } else {
       throw Exception("wrong shape");
     }
-   }
-   else if(this.shape.length==0){
-    return Tensor(result, [2]);
-   }
-   else{throw Exception("wrong shape");}
-    
-    
   }
 
   Tensor unsqueeze(int axis) {
@@ -373,114 +365,143 @@ if(this.shape[this.shape.length-1]!=broadcastedShape[broadcastedShape.length-2])
   Tensor sumSingleAxis(int axis, {bool KeepDim = false}) {
     if (KeepDim == false) {
       if (axis == 0) {
-        
-        Tensor outputTensor= this[0];
+        Tensor outputTensor = this[0].clone();
         for (int i = 1; i < this.shape[0]; i++) {
           outputTensor = outputTensor + this[i];
         }
         return outputTensor;
-        
       } else if (axis >= 1) {
-        Tensor outputTensor = this[0].sumSingleAxis(axis - 1);
-        
-          outputTensor=outputTensor.unsqueeze(0);
-          for (int i = 1; i <this.shape[0]; i++) {
+        Tensor outputTensor = this[0].clone().sumSingleAxis(axis - 1);
+
+        outputTensor = outputTensor.unsqueeze(0);
+        for (int i = 1; i < this.shape[0]; i++) {
           outputTensor =
               outputTensor.append(this[i].sumSingleAxis(axis - 1).unsqueeze(0));
         }
         return outputTensor;
-        
-        
-        
       } else {
         throw Exception("axis out of bound");
       }
     } else if (KeepDim == true) {
       if (axis == 0) {
-       Tensor outputTensor= this[0];
+        Tensor outputTensor = this[0].clone();
         for (int i = 1; i < this.shape[0]; i++) {
           outputTensor = outputTensor + this[i];
         }
         return outputTensor.unsqueeze(0);
       } else if (axis >= 1) {
-        Tensor outputTensor = this[0].sumSingleAxis(axis - 1,KeepDim: KeepDim).unsqueeze(0);
+        Tensor outputTensor =
+            this[0].clone().sumSingleAxis(axis - 1, KeepDim: KeepDim).unsqueeze(0);
         for (int i = 1; i < this.shape[0]; i++) {
-          outputTensor =
-              outputTensor.append(this[i].sumSingleAxis(axis - 1,KeepDim: KeepDim).unsqueeze(0));
+          outputTensor = outputTensor.append(
+              this[i].clone().sumSingleAxis(axis - 1, KeepDim: KeepDim).unsqueeze(0));
         }
         return outputTensor;
       } else {
         throw Exception("axis out of bound");
       }
+    } else {
+      throw Exception("unknown error");
     }
-    else{throw Exception("unknown error");}
   }
 
-Tensor sum(List<int> axes,{bool KeepDim=false}){
-Tensor tmpTensor=this.sumSingleAxis(axes[0],KeepDim: KeepDim);
-Tensor? outputTensor;
-if(KeepDim==false){
-int count=1;
-  for(int i=1;i<axes.length-1;i++){
-      tmpTensor=tmpTensor.sumSingleAxis(axes[i]-count,KeepDim: KeepDim);
-      count++;
+  Tensor sum(List<int> axes, {bool KeepDim = false}) {
+    Tensor tmpTensor = this.clone().sumSingleAxis(axes[0], KeepDim: KeepDim);
+    Tensor? outputTensor;
+    if (KeepDim == false) {
+      int count = 1;
+      for (int i = 1; i < axes.length - 1; i++) {
+        tmpTensor = tmpTensor.sumSingleAxis(axes[i] - count, KeepDim: KeepDim);
+        count++;
+      }
+      if (axes.length > 1) {
+        outputTensor = tmpTensor.sumSingleAxis(axes[axes.length - 1] - count,
+            KeepDim: KeepDim);
+      } else {
+        outputTensor = tmpTensor;
+      }
+      return outputTensor;
+    } else if (KeepDim == true) {
+      for (int i = 1; i < axes.length; i++) {
+        tmpTensor = tmpTensor.sumSingleAxis(axes[i], KeepDim: KeepDim);
+      }
+      return tmpTensor;
+    } else {
+      throw Exception("wrong parameters");
+    }
   }
-if(axes.length>1){
-  outputTensor=tmpTensor.sumSingleAxis(axes[axes.length-1]-count,KeepDim: KeepDim);}
-  else{outputTensor=tmpTensor;}
-  return outputTensor;
-}
-else if(KeepDim==true){
-
-  for(int i=1;i<axes.length;i++){
-      tmpTensor=tmpTensor.sumSingleAxis(axes[i],KeepDim: KeepDim);
-  }
-  return tmpTensor;
-}
- else{throw Exception("wrong parameters");} 
-}
 
   Tensor broadcastTo(List<int> broadcastedShape) {
     if (this.broadcastable(broadcastedShape)) {
       Tensor thisTmp = this;
-        List<int> bcAxes = [];
+      List<int> bcAxes = [];
       if (this.shape.length <= broadcastedShape.length) {
-        int count=0;
-        for (int i = 0; i <  broadcastedShape.length-this.shape.length; i++) {
-        thisTmp = thisTmp.unsqueeze(0);
-        count++;
-      }
-      for(int i=0;i<count;i++){
-        bcAxes.add(i);
-      }
-      }
-      else if(this.shape.length>broadcastedShape.length)
-      {
+        int count = 0;
+        for (int i = 0; i < broadcastedShape.length - this.shape.length; i++) {
+          thisTmp = thisTmp.unsqueeze(0);
+          count++;
+        }
+        for (int i = 0; i < count; i++) {
+          bcAxes.add(i);
+        }
+      } else if (this.shape.length > broadcastedShape.length) {
+        throw Exception("can't broadcast to destined shape");
+      } else {
         throw Exception("can't broadcast to destined shape");
       }
-      else{throw Exception("can't broadcast to destined shape");}
-        
+
 //this.shape.length>=broadcastedShape.length
 
-        for (int i = this.shape.length - 1; i >= 0; i--) {
-          if ((this.shape[i] != broadcastedShape[i]) &&
-              (this.shape[i] != 1 && broadcastedShape[i] != 1)) {
-            throw Exception("can't broadcast to destined shape");
-          } else if (this.shape[i] == broadcastedShape[i]) {
-          } else if (this.shape[i] == 1) {
-            thisTmp = this.repeat(broadcastedShape[i], axis: i);
-            bcAxes.addUniqueElement(i);
-          } else {
-            throw Exception("Unknown error");
-          }
+      for (int i = this.shape.length - 1; i >= 0; i--) {
+        if ((this.shape[i] != broadcastedShape[i]) &&
+            (this.shape[i] != 1 && broadcastedShape[i] != 1)) {
+          throw Exception("can't broadcast to destined shape");
+        } else if (this.shape[i] == broadcastedShape[i]) {
+        } else if (this.shape[i] == 1) {
+          thisTmp = this.repeat(broadcastedShape[i], axis: i);
+          bcAxes.addUniqueElement(i);
+        } else {
+          throw Exception("Unknown error");
         }
-        thisTmp.broadcastedAxes = bcAxes;
-        return thisTmp;
-      
+      }
+      thisTmp.broadcastedAxes = bcAxes;
+      return thisTmp;
     } else {
       throw Exception("can't broadcast to destined shape");
     }
   }
+
+Tensor clone(){
+
+  List<double> resultData=List.from(this.data);
+  List<int> resultShape=List.from(this.shape);
+  return Tensor(resultData,resultShape);
+}
+
+
+
+Tensor squeeze( {int? axis}) {
+  List<int> newShape = [];
+  if (axis != null) {
+    // Squeeze a specific axis
+    for (int i = 0; i < this.shape.length; i++) {
+      if (i == axis && this.shape[i] != 1) {
+        throw Exception("Cannot squeeze non-unit axis");
+      }
+      if (i != axis) {
+        newShape.add(this.shape[i]);
+      }
+    }
+  } else {
+    // Squeeze all unit axes
+    for (int dim in this.shape) {
+      if (dim != 1) {
+        newShape.add(dim);
+      }
+    }
+  }
+  return Tensor(this.data, newShape);
+}
 
   @override
   String toString() {
@@ -492,9 +513,9 @@ else if(KeepDim==true){
     List<int> tensorShape = this.shape;
 
     final List<double> flatList = this.data;
-if(tensorShape.length==0){
-  return this.data[0];
-}
+    if (tensorShape.length == 0) {
+      return this.data[0];
+    }
     List<dynamic> buildList(int dimension, int offset) {
       if (dimension == tensorShape.length - 1) {
         return flatList.sublist(offset, offset + tensorShape[dimension]);
@@ -578,8 +599,8 @@ List<Tensor> broadcast(Tensor a, Tensor b) {
     if (a.shape.length < b.shape.length) {
       return broadcast(b, a);
     } else {
-      Tensor aTmp = a;
-      Tensor bTmp = b;
+      Tensor aTmp = a.clone();
+      Tensor bTmp = b.clone();
 //a.shape.length>=b.shape.length
       for (int i = 0; i < a.shape.length - b.shape.length; i++) {
         bTmp = bTmp.unsqueeze(0);
@@ -610,25 +631,37 @@ List<int> calculateBroadcastedShape(Tensor a, Tensor b) {
     if (a.shape.length < b.shape.length) {
       return calculateBroadcastedShape(b, a);
     } else {
-      List<int> broadcastedShape =List.from(a.shape);
+      List<int> broadcastedShape = List.from(a.shape);
       Tensor? aTmp;
       Tensor? bTmp;
 //a.shape.length>=b.shape.length
-if(a.shape.length>0){aTmp=a;}else if(a.shape.length==0) {aTmp=a.unsqueeze(0);}else{throw Exception("unknown error");}
-if(b.shape.length>0){bTmp=b;}else if(b.shape.length==0) {bTmp=b.unsqueeze(0);}else{throw Exception("unknown error");}
-      for (int i = broadcastedShape.length - 1; i >= 0; i--) {
-        if ((aTmp.shape[i] != bTmp.shape[i]) &&
-            (aTmp.shape[i] != 1 && bTmp.shape[i] != 1)) {
-          throw Exception("can't broadcast to destined shape");
-        } else if (aTmp.shape[i] == bTmp.shape[i]) {
-        } else if (aTmp.shape[i] == 1) {
-          broadcastedShape[i] = bTmp.shape[i];
-        } else if (bTmp.shape[i] == 1) {
-          broadcastedShape[i] = aTmp.shape[i];
-        } else {
-          throw Exception("Unknown error");
-        }
+      if (a.shape.length > 0) {
+        aTmp = a.clone();
+      } else if (a.shape.length == 0) {
+        aTmp = a.clone().unsqueeze(0);
+      } else {
+        throw Exception("unknown error");
       }
+      if (b.shape.length > 0) {
+        bTmp = b.clone();
+      } else if (b.shape.length == 0) {
+        bTmp = b.clone().unsqueeze(0);
+      } else {
+        throw Exception("unknown error");
+      }
+       int offset = broadcastedShape.length - bTmp.shape.length;
+
+  for (int i = broadcastedShape.length - 1; i >= 0; i--) {
+    int bIndex = i - offset;
+
+    if (bIndex >= 0 && aTmp.shape[i] != bTmp.shape[bIndex] && aTmp.shape[i] != 1 && bTmp.shape[bIndex] != 1) {
+      throw Exception("Can't broadcast to destined shape");
+    }
+
+    if (bIndex >= 0) {
+      broadcastedShape[i] = math.max(aTmp.shape[i], bTmp.shape[bIndex]);
+    }
+  }
 
       return broadcastedShape;
     }
@@ -638,14 +671,66 @@ if(b.shape.length>0){bTmp=b;}else if(b.shape.length==0) {bTmp=b.unsqueeze(0);}el
 }
 
 
-extension on List<int>{
-void addUniqueElement(int element) {
-  int index = this.indexOf(element);
-  if (index != -1) {
-    
-  } else {
-    // 如果元素不存在，添加到列表中
-    this.add(element);
-  }
+List<List<int>> calculateMatmulBroadcastedShape(Tensor a, Tensor b){
+if (a.shape.length == 1 && b.shape.length == 1) {
+      if (a.shape[0] == b.shape[0]) {
+        return[List.from(a.shape),List.from(b.shape)];
+      } else {
+        throw Exception("wrong shape");
+      }
 }
+
+    else if (a.shape.length >= 2 && b.shape.length >= 2) {
+      if (a.shape.length < b.shape.length) {
+      List<List<int>> Shape=calculateMatmulBroadcastedShape(b, a);
+     List<List<int>> resultShape=[Shape[1],Shape[0]];
+     return resultShape;
+    } else {
+      List<int> broadcastedShape = List.from(a.shape);
+      
+    
+      if (a.shape[a.shape.length - 1] !=
+          b.shape[b.shape.length - 2]) {
+        throw Exception("wrong shape");
+      }
+    
+int offset = broadcastedShape.length - b.shape.length;
+      for (int i = broadcastedShape.length - 1 - 2; i >= 0; i--) {
+        int bIndex = i - offset;
+
+    if (bIndex >= 0 && a.shape[i] != b.shape[bIndex] && a.shape[i] != 1 && b.shape[bIndex] != 1) {
+      throw Exception("Can't broadcast to destined shape");
+    }
+
+    if (bIndex >= 0) {
+      broadcastedShape[i] = math.max(a.shape[i], b.shape[bIndex]);
+    }
+      }
+      List<int> aShape=List.from(broadcastedShape);
+      broadcastedShape.removeLast();
+      broadcastedShape.removeLast();
+      List<int> bShape=List.from(broadcastedShape);
+      bShape.addAll([b.shape[b.shape.length-2],b.shape[b.shape.length-1]]);
+      return [aShape,bShape];
+      
+      
+    
+    }
+    } 
+    else{throw Exception("wrong shape");}
+
+
+
+}
+
+
+extension on List<int> {
+  void addUniqueElement(int element) {
+    int index = this.indexOf(element);
+    if (index != -1) {
+    } else {
+      // 如果元素不存在，添加到列表中
+      this.add(element);
+    }
+  }
 }

@@ -122,9 +122,64 @@ return Node(this.tensor.broadcastTo(broadcastedShape),op:'broadcast',parents: [t
 //Node sqrt(){
   //return Node(this.tensor.sqrt(),op:'sqrt',parents:[this]);
 //}
-
-
-
+Node matmul(Node other){
+  Tensor a=this.tensor.clone();
+  Tensor b=other.tensor.clone();
+  Node thisTmp=this;
+  Node otherTmp=other;
+  String isUnsqueezed="None";
+if (a.shape.length == 0 || b.shape.length == 0) {
+      throw Exception("wrong shape");
+    } else if (a.shape.length == 1 && b.shape.length == 1) {
+      if (a.shape[0] == b.shape[0]) {
+        
+      } else {
+        throw Exception("wrong shape");
+      }
+    }
+    else if (a.shape.length == 1) {
+      if (a.shape[0] != b.shape[b.shape.length - 2]) {
+        throw Exception("wrong shape");
+      } else {
+        thisTmp=this.unsqueeze(0);
+       isUnsqueezed="this";
+        
+      }
+    } else if(b.shape.length==1){
+      if (a.shape[a.shape.length - 1] != b.shape[0]) {
+        throw Exception("wrong shape");
+      } else {
+        otherTmp=other.unsqueeze(1);
+        isUnsqueezed="other";
+      }
+    }
+    else{
+      throw Exception("wrong shape");
+    }
+List<List<int>> targetShape=calculateMatmulBroadcastedShape(thisTmp.tensor, otherTmp.tensor);
+  Node? broadcastedThis;
+  Node? broadcastedOther;
+  if(thisTmp.tensor.shape!=targetShape){broadcastedThis=thisTmp.broadcast_to(targetShape[0]);}else{broadcastedThis=thisTmp;}
+  if(otherTmp.tensor.shape!=targetShape){broadcastedOther=otherTmp.broadcast_to(targetShape[1]);}else{broadcastedOther=otherTmp;}
+Tensor result=broadcastedThis.tensor.matmul(broadcastedOther.tensor);
+if(isUnsqueezed=="this")
+{
+  return Node(result.squeeze(axis: result.shape[result.shape.length-2]),op: 'matmul',parents: [broadcastedThis,broadcastedOther]);
+}
+else if(isUnsqueezed=="other"){
+  return Node(result.squeeze(axis: result.shape[result.shape.length-1]),op: 'matmul',parents: [broadcastedThis,broadcastedOther]);
+}
+else if(isUnsqueezed=="None"){
+  return Node(result,op: 'matmul',parents: [broadcastedThis,broadcastedOther]);
+}
+else{throw Exception("wrong result shape");}
+}
+Node unsqueeze(int axis){
+  return Node(this.tensor.unsqueeze(axis),op:'unsqueeze',parents: [this]);
+}
+Node squeeze({int? axis }){
+  return Node(this.tensor.squeeze(axis: axis),op: 'squeeze',parents: [this]);
+}
 
 void backward({Tensor? gradient})
 {if(gradient == null){
