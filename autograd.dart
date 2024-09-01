@@ -164,10 +164,10 @@ List<List<int>> targetShape=calculateMatmulBroadcastedShape(thisTmp.tensor, othe
 Tensor result=broadcastedThis.tensor.matmul(broadcastedOther.tensor);
 if(isUnsqueezed=="this")
 {
-  return Node(result.squeeze(axis: result.shape[result.shape.length-2]),op: 'matmul',parents: [broadcastedThis,broadcastedOther]);
+  return Node(result.squeeze(axis: result.shape.length-2),op: 'matmul',parents: [broadcastedThis,broadcastedOther]);
 }
 else if(isUnsqueezed=="other"){
-  return Node(result.squeeze(axis: result.shape[result.shape.length-1]),op: 'matmul',parents: [broadcastedThis,broadcastedOther]);
+  return Node(result.squeeze(axis: result.shape.length-1),op: 'matmul',parents: [broadcastedThis,broadcastedOther]);
 }
 else if(isUnsqueezed=="None"){
   return Node(result,op: 'matmul',parents: [broadcastedThis,broadcastedOther]);
