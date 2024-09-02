@@ -503,6 +503,42 @@ Tensor squeeze( {int? axis}) {
   return Tensor(this.data, newShape);
 }
 
+
+ Tensor permute(List<int> perm) {
+    // Step 1: 创建新形状
+    List<int> newShape = List.generate(perm.length, (i) => shape[perm[i]]);
+    List<int> newStrides=_computeStrides(newShape);
+   
+
+    // Step 3: 创建新数据列表，填充数据
+    List<double> newData = List.filled(data.length, 0.0);
+    int rank = shape.length;
+
+    // 遍历新数据列表
+   for (int i = 0; i < newData.length; i++) {
+    int newIndex = 0;
+    int remainingIndex = i;
+
+    // 根据 perm 的顺序计算原始数据的索引
+    for (int j = 0; j < rank; j++) {
+        
+        int currentIndex = remainingIndex ~/strides[j];
+        remainingIndex %= strides[j];
+
+        // 将这个索引映射到原始张量的顺序
+        newIndex += currentIndex * newStrides[perm[j]];
+        
+       
+    }
+   
+    // 将原始张量中的值赋值到新的数据列表
+    newData[newIndex] = data[i];
+}
+    return Tensor(newData, newShape);
+  }
+
+
+
   @override
   String toString() {
     dynamic output = this.toList();

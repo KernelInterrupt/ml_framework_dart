@@ -1,3 +1,4 @@
+
 import 'dart:math' as math;
 import 'tensor.dart';
 class Node{
@@ -5,8 +6,9 @@ class Node{
 Tensor tensor;
 String? op;
 List<Node>? parents;
+int? axis;
 Tensor grad=Tensor([0.0],[1]);
-Node(this.tensor,{this.op,this.parents});
+Node(this.tensor,{this.op,this.parents,this.axis});
     
     Node operator +(Node other){
 
@@ -175,10 +177,10 @@ else if(isUnsqueezed=="None"){
 else{throw Exception("wrong result shape");}
 }
 Node unsqueeze(int axis){
-  return Node(this.tensor.unsqueeze(axis),op:'unsqueeze',parents: [this]);
+  return Node(this.tensor.unsqueeze(axis),op:'unsqueeze',parents: [this],axis:axis);
 }
 Node squeeze({int? axis }){
-  return Node(this.tensor.squeeze(axis: axis),op: 'squeeze',parents: [this]);
+  return Node(this.tensor.squeeze(axis: axis),op: 'squeeze',parents: [this],axis:axis);
 }
 
 void backward({Tensor? gradient})
@@ -234,6 +236,67 @@ parents![0].backward(gradient:gradient*this.tensor);//this.value==math.exp(paren
 }
 else if(op=='broadcast'){
   parents![0].backward(gradient:gradient.sum(this.tensor.broadcastedAxes!));
+}
+else if(op=='matmul'){
+
+Tensor a=parents![1].tensor.clone();
+  Tensor b=gradient.clone();
+ 
+  String isUnsqueezed="None";
+if (a.shape.length == 0 || b.shape.length == 0) {
+      throw Exception("wrong shape");
+    } else if (a.shape.length == 1 && b.shape.length == 1) {
+      if (a.shape[0] == b.shape[0]) {
+        
+      } else {
+        throw Exception("wrong shape");
+      }
+    }
+    else if (a.shape.length == 1) {
+      if (a.shape[0] != b.shape[b.shape.length - 2]) {
+        throw Exception("wrong shape");
+      } else {
+        a=a.unsqueeze(0);
+       isUnsqueezed="this";
+        
+      }
+    } else if(b.shape.length==1){
+      if (a.shape[a.shape.length - 1] != b.shape[0]) {
+        throw Exception("wrong shape");
+      } else {
+        b=b.unsqueeze(1);
+        isUnsqueezed="other";
+      }
+    }
+    else{
+      throw Exception("wrong shape");
+    }
+List<List<int>> targetShape=calculateMatmulBroadcastedShape(a, b);
+  Tensor? broadcastedA;
+  Tensor? broadcastedB;
+  if(a.shape!=targetShape){broadcastedA=a.broadcastTo(targetShape[0]);}else{broadcastedA=a;}
+  if(b.shape!=targetShape){broadcastedB=b.broadcastTo(targetShape[1]);}else{broadcastedB=b;}
+Tensor result=broadcastedA.matmul(broadcastedB);
+if(isUnsqueezed=="this")
+{
+  
+}
+else if(isUnsqueezed=="other"){
+  
+}
+else if(isUnsqueezed=="None"){
+ 
+}
+else{throw Exception("wrong result shape");}
+}
+else if(op=='unsqueeze')
+{
+parents![0].backward(gradient: gradient.squeeze(axis:this.axis));
+
+}
+else if(op=='squeeze'){
+parents![0].backward(gradient: gradient.unsqueeze(this.axis!));
+
 }
 }
 
