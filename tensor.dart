@@ -503,6 +503,16 @@ Tensor squeeze( {int? axis}) {
   return Tensor(this.data, newShape);
 }
 
+Tensor transpose(int axis1,int axis2){
+List<int> Shape=List.generate(this.shape.length, (index) => index);
+Shape[axis1]=axis2;
+Shape[axis2]=axis1;
+
+return permute(Shape);
+
+
+
+}
 
  Tensor permute(List<int> perm) {
     // Step 1: 创建新形状
