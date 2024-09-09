@@ -155,24 +155,24 @@ if (a.shape.length == 0 || b.shape.length == 0) {
         isUnsqueezed="other";
       }
     }
-    else{
-      throw Exception("wrong shape");
-    }
+   
 List<List<int>> targetShape=calculateMatmulBroadcastedShape(thisTmp.tensor, otherTmp.tensor);
   Node? broadcastedThis;
   Node? broadcastedOther;
-  if(thisTmp.tensor.shape!=targetShape){broadcastedThis=thisTmp.broadcast_to(targetShape[0]);}else{broadcastedThis=thisTmp;}
-  if(otherTmp.tensor.shape!=targetShape){broadcastedOther=otherTmp.broadcast_to(targetShape[1]);}else{broadcastedOther=otherTmp;}
+  if(thisTmp.tensor.shape.equal(targetShape[0])){broadcastedThis=thisTmp;}else{broadcastedThis=thisTmp.broadcast_to(targetShape[0]);}
+  if(otherTmp.tensor.shape.equal(targetShape[1])){broadcastedOther=otherTmp;}else{broadcastedOther=otherTmp.broadcast_to(targetShape[1]);}
 Tensor result=broadcastedThis.tensor.matmul(broadcastedOther.tensor);
 if(isUnsqueezed=="this")
-{
-  return Node(result.squeeze(axis: result.shape.length-2),op: 'matmul',parents: [broadcastedThis,broadcastedOther]);
+{Node resultNode=Node(result,op: 'matmul',parents: [broadcastedThis,broadcastedOther]);
+  return resultNode.squeeze(axis: result.shape.length-2);
 }
 else if(isUnsqueezed=="other"){
-  return Node(result.squeeze(axis: result.shape.length-1),op: 'matmul',parents: [broadcastedThis,broadcastedOther]);
+  Node resultNode=Node(result,op: 'matmul',parents: [broadcastedThis,broadcastedOther]);
+  return resultNode.squeeze(axis: result.shape.length-1);
 }
 else if(isUnsqueezed=="None"){
-  return Node(result,op: 'matmul',parents: [broadcastedThis,broadcastedOther]);
+  Node resultNode=Node(result,op: 'matmul',parents: [broadcastedThis,broadcastedOther]);
+  return resultNode;
 }
 else{throw Exception("wrong result shape");}
 }
@@ -264,7 +264,7 @@ if (a.shape.length == 0 || b.shape.length == 0) {
       if (a.shape[a.shape.length - 1] != b.shape[0]) {
         throw Exception("wrong shape");
       } else {
-        b=b.unsqueeze(1);
+        b=b.unsqueeze(0);
         isUnsqueezed="other";
       }
     }
@@ -277,16 +277,15 @@ List<List<int>> targetShape=calculateMatmulBroadcastedShape(a, b);
   Tensor? broadcastedB;
   if(a.shape!=targetShape){broadcastedA=a.broadcastTo(targetShape[0]);}else{broadcastedA=a;}
   if(b.shape!=targetShape){broadcastedB=b.broadcastTo(targetShape[1]);}else{broadcastedB=b;}
-  print(broadcastedA);
-  print(broadcastedB);
+  
 Tensor Weightresult=broadcastedA.matmul(broadcastedB);
 if(isUnsqueezed=="this")
 {
-  Weightresult=Weightresult.squeeze(axis: Weightresult.shape.length-1);
+  Weightresult=Weightresult.squeeze(axis: Weightresult.shape.length-2);
   parents![0].backward(gradient: Weightresult);
 }
 else if(isUnsqueezed=="other"){
-   Weightresult=Weightresult.squeeze(axis: Weightresult.shape.length-2);
+   Weightresult=Weightresult.squeeze(axis: Weightresult.shape.length-1);
   parents![0].backward(gradient: Weightresult);
 }
 else if(isUnsqueezed=="None"){
@@ -299,8 +298,8 @@ void calculateXGrad(){
 
 
 
-Tensor a=gradient!.clone();
-  Tensor b=parents![0].tensor.clone();
+Tensor b=gradient!.clone();
+  Tensor a=parents![0].tensor.clone();
  
   String isUnsqueezed="None";
 if (a.shape.length == 0 || b.shape.length == 0) {
@@ -329,7 +328,7 @@ if (a.shape.length == 0 || b.shape.length == 0) {
       }
     }
     
-      b=b.transpose(b.shape.length-2, b.shape.length-1);
+      a=a.transpose(a.shape.length-2, a.shape.length-1);
     
     
 List<List<int>> targetShape=calculateMatmulBroadcastedShape(a, b);
