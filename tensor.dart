@@ -251,6 +251,18 @@ Tensor sigmoid(){
   return full(1, this.shape)/full(1, this.shape)+this.neg().exp();
 }
 
+Tensor relu(){
+  return max(full(0.0,this.shape));
+}
+
+Tensor max(Tensor other){
+if(this.data.length==other.data.length)
+{
+return Tensor(List.generate(this.data.length, (i) => this.data[i] > other.data[i] ? this.data[i] : other.data[i]),this.shape);
+}
+else{throw Exception("wrong shape");}
+}
+
 
   bool broadcastable(List<int> broadcastedShape) {
     int minLength = this.shape.length <= broadcastedShape.length
@@ -727,6 +739,8 @@ List<int> calculateBroadcastedShape(Tensor a, Tensor b) {
 }
 
 
+
+
 List<List<int>> calculateMatmulBroadcastedShape(Tensor a, Tensor b){
 if (a.shape.length == 1 && b.shape.length == 1) {
       if (a.shape[0] == b.shape[0]) {
@@ -780,6 +794,13 @@ int offset = broadcastedShape.length - bTmp.shape.length;
 
 
 }
+
+Tensor max(Tensor a,Tensor b){
+return a.max(b);
+
+}
+
+
 
 
 extension on List<int> {
