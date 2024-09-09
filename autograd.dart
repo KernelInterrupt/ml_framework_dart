@@ -121,6 +121,10 @@ Node broadcast_to(List<int> broadcastedShape){
 return Node(this.tensor.broadcastTo(broadcastedShape),op:'broadcast',parents: [this]);
 
 }
+Node sigmoid(){
+
+  return Node(this.tensor.sigmoid(),op:'sigmoid',parents:[this]);
+}
 //Node sqrt(){
   //return Node(this.tensor.sqrt(),op:'sqrt',parents:[this]);
 //}
@@ -367,6 +371,12 @@ else if(op=='squeeze'){
 parents![0].backward(gradient: gradient.unsqueeze(this.axis!));
 
 }
+
+else if(op=='sigmoid')
+{
+parents![0].backward(gradient: gradient*(full(1.0,gradient.shape)-gradient));
+
+}
 }
 
 }
@@ -403,3 +413,6 @@ Node asin(Node a){
 Node acos(Node a){
   return a.acos();
 }
+
+
+

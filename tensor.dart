@@ -245,6 +245,13 @@ return result;
     }
   }
 
+
+Tensor sigmoid(){
+
+  return full(1, this.shape)/full(1, this.shape)+this.neg().exp();
+}
+
+
   bool broadcastable(List<int> broadcastedShape) {
     int minLength = this.shape.length <= broadcastedShape.length
         ? this.shape.length
@@ -549,6 +556,9 @@ return permute(Shape);
 
 
 
+
+
+
   @override
   String toString() {
     dynamic output = this.toList();
@@ -782,3 +792,4 @@ extension on List<int> {
     }
   }
 }
+
