@@ -15,12 +15,12 @@ var loss=nn.MSELoss(y, output);
 loss.backward();
 Tensor lr1=full(0.001, z.weights.grad.shape);
 Tensor lr2=full(0.001, z.bias.grad.shape);
-for(int j=0;j<=20;j++){
+for(int j=0;j<=300;j++){
 for(int i=0;i<=20;i++){
 z.weights.tensor=z.weights.tensor-lr1*z.weights.grad;
 z.bias.tensor=z.bias.tensor-lr2*z.bias.grad;
 x=Node(Tensor(List.generate(5, (index) => (index+i).toDouble()),[5]));
-y=Node(x.tensor*full(5, [5])+full(3,[5]));
+y=Node(x.tensor*5+3);
 
 output=z.forward(x);
 print("-------------");

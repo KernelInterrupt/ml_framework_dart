@@ -24,19 +24,19 @@ class Tensor {
   }
 
   int get size => data.length;
-  Tensor operator +(Tensor other) {
+  Tensor operator +(dynamic other) {
     return add(other);
   }
 
-  Tensor operator -(Tensor other) {
+  Tensor operator -(dynamic other) {
     return sub(other);
   }
 
-  Tensor operator *(Tensor other) {
+  Tensor operator *(dynamic other) {
     return mul(other);
   }
 
-  Tensor operator /(Tensor other) {
+  Tensor operator /(dynamic other) {
     return div(other);
   }
 
