@@ -8,8 +8,9 @@ String? op;
 List<Node>? parents;
 int? axis;
 List<int>? transposedAxes;
+boolTensor? reluMask;
 Tensor grad=Tensor([0.0],[1]);
-Node(this.tensor,{this.op,this.parents,this.axis,this.transposedAxes});
+Node(this.tensor,{this.op,this.parents,this.axis,this.transposedAxes,this.reluMask});
     
     Node operator +(dynamic other){
 
@@ -225,7 +226,9 @@ Node squeeze({int? axis }){
   return Node(this.tensor.squeeze(axis: axis),op: 'squeeze',parents: [this],axis:axis);
 }
 Node relu(){
-  return Node(this.tensor.relu(),op:'relu',parents: [this]);
+  boolTensor mask=createReluMask(this.tensor);
+  Tensor result= mask.mul(this.tensor);
+  return Node(result,op:'relu',parents: [this],reluMask: mask);
 }
 Node transpose(int axis1,int axis2){
   return Node(this.tensor.transpose(axis1, axis2),op:'transpose',parents: [this],transposedAxes:[axis1,axis2]);
@@ -435,6 +438,10 @@ else if (op=='transpose')
 }
 else if(op=='sum'){
  parents![0].backward(gradient: gradient.broadcastTo(parents![0].tensor.shape));
+
+}
+else if(op=='relu'){
+parents![0].backward(gradient: reluMask!.mul(gradient));
 
 }
 

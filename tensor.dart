@@ -808,6 +808,66 @@ return a.max(b);
 }
 
 
+boolTensor createReluMask(Tensor reluInput){
+  List<bool> result=List.filled(reluInput.data.length, true);
+for(int i=0;i<reluInput.data.length;i++){
+if(reluInput.data[i]<0){
+
+  result[i]=false;
+}
+
+
+}
+return boolTensor(result, reluInput.shape);
+
+}
+
+class boolTensor{
+
+ List<bool> data;
+  List<int> shape;
+  late List<int> strides;
+  List<int>? broadcastedAxes;
+  boolTensor(this.data, this.shape) {
+    int _shapeProduct =
+        shape.fold(1, (previousValue, element) => previousValue * element);
+    if (_shapeProduct == data.length) {
+      strides = _computeStrides(shape);
+    } else {
+      throw Exception("wrong data");
+    }
+  }
+
+  List<int> _computeStrides(List<int> shape) {
+    List<int> strides = List.filled(shape.length, 1);
+    for (int i = shape.length - 2; i >= 0; i--) {
+      strides[i] = strides[i + 1] * shape[i + 1];
+    }
+    return strides;
+  }
+
+dynamic mul(dynamic other){
+if(other is Tensor){
+List<double> result=List.filled(other.data.length, 0.0);
+for(int i=0;i<other.data.length;i++){
+if(this.data[i]==true){
+result[i]=other.data[i];
+
+}
+
+
+
+}
+return Tensor(result, other.shape);
+
+}
+else{throw Exception("wrong data type");}
+
+}
+
+
+}
+
 
 
 extension on List<int> {

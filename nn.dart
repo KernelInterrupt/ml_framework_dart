@@ -9,8 +9,8 @@ class Sequential {
   Sequential(this.layers);
 
   // 前向传播，依次执行所有层
-  Tensor forward(Tensor input) {
-    Tensor output = input;
+  Node forward(Node input) {
+    Node output = input;
     for (var layer in layers) {
       output = layer.forward(output);
     }
@@ -52,5 +52,24 @@ class Linear {
 Node MSELoss(Node target,Node prediction)
 {
 return ((target-prediction).pow(2).sum())/target.tensor.data.length;
+
+}
+
+class ReLU{
+
+Node forward(Node input){
+
+return input.relu();
+
+}
+}
+
+class Sigmoid{
+
+Node forward(Node input){
+
+return input.sigmoid();
+
+}
 
 }
