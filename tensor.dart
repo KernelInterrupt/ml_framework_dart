@@ -424,7 +424,13 @@ else{throw Exception("wrong shape");}
     }
   }
 
-  Tensor sum(List<int> axes, {bool KeepDim = false}) {
+  Tensor sum({List<int> axes=const [], bool KeepDim = false}) {
+    if(axes.isEmpty){
+
+      List<double> resultList=[this.data.reduce((value, element) => value + element)];
+      return Tensor(resultList, []);
+    }
+    else{
     Tensor tmpTensor = this.clone().sumSingleAxis(axes[0], KeepDim: KeepDim);
     Tensor? outputTensor;
     if (KeepDim == false) {
@@ -447,6 +453,7 @@ else{throw Exception("wrong shape");}
       return tmpTensor;
     } else {
       throw Exception("wrong parameters");
+    }
     }
   }
 

@@ -7,28 +7,30 @@ Tensor tensor;
 String? op;
 List<Node>? parents;
 int? axis;
+List<int>? transposedAxes;
 Tensor grad=Tensor([0.0],[1]);
-Node(this.tensor,{this.op,this.parents,this.axis});
+Node(this.tensor,{this.op,this.parents,this.axis,this.transposedAxes});
     
-    Node operator +(Node other){
+    Node operator +(dynamic other){
 
       return add(other);
     }
-    Node operator -(Node other){
+    Node operator -(dynamic other){
 
       return sub(other);
     }
-    Node operator *(Node other){
+    Node operator *(dynamic other){
       return mul(other);
      
     }
-    Node operator /(Node other){
+    Node operator /(dynamic other){
       return div(other);
     }
 
 
 
-Node add(Node other){
+Node add(dynamic other){
+  if(other is Node){
 if(this.tensor.shape.equal(other.tensor.shape)){
   return Node(this.tensor+other.tensor,op: 'add',parents: [this,other]);
 }
@@ -38,49 +40,76 @@ else{
   Node? broadcastedOther;
   if(this.tensor.shape.equal(targetShape)){broadcastedThis=this;}else{broadcastedThis=this.broadcast_to(targetShape);}
   if(other.tensor.shape.equal(targetShape)){broadcastedOther=other;}else{broadcastedOther=other.broadcast_to(targetShape);}
-  return Node(broadcastedThis.tensor-broadcastedOther.tensor,op: 'sub',parents: [broadcastedThis,broadcastedOther]);
+  return Node(broadcastedThis.tensor+broadcastedOther.tensor,op: 'add',parents: [broadcastedThis,broadcastedOther]);
 }
+  }
+  else if(other is num){
+    Node generatedOther=Node(full(other.toDouble(), this.tensor.shape));
+    return this.add(generatedOther);
+  }
+  else{throw Exception("wrong data type");}
 }
-Node sub(Node other){
+Node sub(dynamic other){
+if(other is Node){
 if(this.tensor.shape.equal(other.tensor.shape)){
   return Node(this.tensor-other.tensor,op: 'sub',parents: [this,other]);
 }
 else{
-List<int> targetShape=calculateBroadcastedShape(this.tensor, other.tensor);
+  List<int> targetShape=calculateBroadcastedShape(this.tensor, other.tensor);
   Node? broadcastedThis;
   Node? broadcastedOther;
   if(this.tensor.shape.equal(targetShape)){broadcastedThis=this;}else{broadcastedThis=this.broadcast_to(targetShape);}
   if(other.tensor.shape.equal(targetShape)){broadcastedOther=other;}else{broadcastedOther=other.broadcast_to(targetShape);}
   return Node(broadcastedThis.tensor-broadcastedOther.tensor,op: 'sub',parents: [broadcastedThis,broadcastedOther]);
 }
+  }
+  else if(other is num){
+    Node generatedOther=Node(full(other.toDouble(), this.tensor.shape));
+    return this.sub(generatedOther);
+  }
+  else{throw Exception("wrong data type");}
 
 }
-Node mul(Node other){
-   if(this.tensor.shape.equal(other.tensor.shape)){
+Node mul(dynamic other){
+   if(other is Node){
+if(this.tensor.shape.equal(other.tensor.shape)){
   return Node(this.tensor*other.tensor,op: 'mul',parents: [this,other]);
 }
 else{
- List<int> targetShape=calculateBroadcastedShape(this.tensor, other.tensor);
+  List<int> targetShape=calculateBroadcastedShape(this.tensor, other.tensor);
   Node? broadcastedThis;
   Node? broadcastedOther;
-  if(this.tensor.shape!=targetShape){broadcastedThis=this.broadcast_to(targetShape);}else{broadcastedThis=this;}
-  if(other.tensor.shape!=targetShape){broadcastedOther=other.broadcast_to(targetShape);}else{broadcastedOther=other;}
+  if(this.tensor.shape.equal(targetShape)){broadcastedThis=this;}else{broadcastedThis=this.broadcast_to(targetShape);}
+  if(other.tensor.shape.equal(targetShape)){broadcastedOther=other;}else{broadcastedOther=other.broadcast_to(targetShape);}
   return Node(broadcastedThis.tensor*broadcastedOther.tensor,op: 'mul',parents: [broadcastedThis,broadcastedOther]);
 }
+  }
+  else if(other is num){
+    Node generatedOther=Node(full(other.toDouble(), this.tensor.shape));
+    return this.mul(generatedOther);
+  }
+  else{throw Exception("wrong data type");}
 }
-Node div(Node other){
-  if(this.tensor.shape.equal(other.tensor.shape)){
+Node div(dynamic other){
+  
+  if(other is Node){
+if(this.tensor.shape.equal(other.tensor.shape)){
   return Node(this.tensor/other.tensor,op: 'div',parents: [this,other]);
 }
 else{
   List<int> targetShape=calculateBroadcastedShape(this.tensor, other.tensor);
   Node? broadcastedThis;
   Node? broadcastedOther;
-  if(this.tensor.shape!=targetShape){broadcastedThis=this.broadcast_to(targetShape);}else{broadcastedThis=this;}
-  if(other.tensor.shape!=targetShape){broadcastedOther=other.broadcast_to(targetShape);}else{broadcastedOther=other;}
-
+  if(this.tensor.shape.equal(targetShape)){broadcastedThis=this;}else{broadcastedThis=this.broadcast_to(targetShape);}
+  if(other.tensor.shape.equal(targetShape)){broadcastedOther=other;}else{broadcastedOther=other.broadcast_to(targetShape);}
   return Node(broadcastedThis.tensor/broadcastedOther.tensor,op: 'div',parents: [broadcastedThis,broadcastedOther]);
 }
+  }
+  else if(other is num){
+    Node generatedOther=Node(full(other.toDouble(), this.tensor.shape));
+    return this.div(generatedOther);
+  }
+  else{throw Exception("wrong data type");}
 }
 
 Node sin()
@@ -114,8 +143,17 @@ Node log()
 {
   return Node(this.tensor.log(),op: 'log',parents: [this]);
 }
-Node pow(Node other){
+Node pow(dynamic other){
+
+  if(other is Node){
    return Node(this.tensor.pow(other.tensor),op: 'pow',parents: [this,other]);
+  }
+  else if(other is num)
+  {
+    Node generatedOther=Node(full(other.toDouble(), this.tensor.shape));
+    return this.pow(generatedOther);
+  }
+  else{throw Exception("wrong data type");}
 }
 Node broadcast_to(List<int> broadcastedShape){
 return Node(this.tensor.broadcastTo(broadcastedShape),op:'broadcast',parents: [this]);
@@ -186,6 +224,20 @@ Node unsqueeze(int axis){
 Node squeeze({int? axis }){
   return Node(this.tensor.squeeze(axis: axis),op: 'squeeze',parents: [this],axis:axis);
 }
+Node relu(){
+  return Node(this.tensor.relu(),op:'relu',parents: [this]);
+}
+Node transpose(int axis1,int axis2){
+  return Node(this.tensor.transpose(axis1, axis2),op:'transpose',parents: [this],transposedAxes:[axis1,axis2]);
+}
+Node sum({List<int> axes=const []}){
+  return Node(this.tensor.sum(axes: axes),op: 'sum',parents: [this]);
+
+}
+
+
+
+
 
 void backward({Tensor? gradient})
 {if(gradient == null){
@@ -239,10 +291,10 @@ parents![0].backward(gradient:gradient*this.tensor);//this.value==math.exp(paren
 
 }
 else if(op=='broadcast'){
-  parents![0].backward(gradient:gradient.sum(this.tensor.broadcastedAxes!));
+  parents![0].backward(gradient:gradient.sum(axes:this.tensor.broadcastedAxes!));
 }
 else if(op=='matmul'){
-void calculateWeightGrad(){
+void calculateLeftGrad(){
 Tensor a=gradient!.clone();
   Tensor b=parents![1].tensor.clone();
  
@@ -298,7 +350,7 @@ else if(isUnsqueezed=="None"){
 else{throw Exception("wrong result shape");}
 }
 
-void calculateXGrad(){
+void calculateRightGrad(){
 
 
 
@@ -357,8 +409,8 @@ else{throw Exception("wrong result shape");}
 
 }
 
-calculateWeightGrad();
-calculateXGrad();
+calculateLeftGrad();
+calculateRightGrad();
 
 
 }
@@ -377,7 +429,17 @@ else if(op=='sigmoid')
 parents![0].backward(gradient: gradient*(full(1.0,gradient.shape)-gradient));
 
 }
+else if (op=='transpose')
+{
+  parents![0].backward(gradient: gradient.transpose(transposedAxes![1], transposedAxes![0]));
 }
+else if(op=='sum'){
+ parents![0].backward(gradient: gradient.broadcastTo(parents![0].tensor.shape));
+
+}
+
+}
+
 
 }
 

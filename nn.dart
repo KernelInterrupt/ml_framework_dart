@@ -32,7 +32,7 @@ class Linear {
     weights = Node(Tensor(weightData, [outputSize, inputSize]));
     
     // 初始化偏置，形状为 [outputSize]
-    List<double> biasData = List.generate(outputSize, (_) => rand.nextDouble());
+    List<double> biasData = List.generate(outputSize, (_) => rand.nextDouble()+0.001);//避免log函数报错
     bias = Node(Tensor(biasData, [outputSize]));
   }
 
@@ -43,9 +43,14 @@ class Linear {
     }
     
     // 计算: output = weights * input + bias
-    Node output=weights.matmul(input)+bias;
-    print(output.tensor);
+    Node output=input.matmul(weights.transpose(weights.tensor.shape.length-2,weights.tensor.shape.length-1))+bias;
+    
     return output;
   }
  
+}
+Node MSELoss(Node target,Node prediction)
+{
+return ((target-prediction).pow(2).sum())/target.tensor.data.length;
+
 }
